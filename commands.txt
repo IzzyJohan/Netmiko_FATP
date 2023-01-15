@@ -1,0 +1,3 @@
+show run banner
+show ospf neighbor
+show alarms brief system active
