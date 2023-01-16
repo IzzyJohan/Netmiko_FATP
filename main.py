@@ -60,7 +60,7 @@ def node_connection(ip_list):
         print(ssh_output)
         log_file.write(ssh_output)
         net_connect.write_channel(f"ssh {node['ssh_user']}@{ip}\n")
-        time.sleep(2)
+        time.sleep(2.2)
         pass_output = net_connect.read_channel()
 
         if 'rsa' in pass_output.lower():
@@ -68,10 +68,10 @@ def node_connection(ip_list):
 
         elif 'password' in pass_output.lower():
             net_connect.write_channel(f"{node['password']}\n")
-            time.sleep(1)
+            time.sleep(1.5)
             net_connect.write_channel(f"{node['another_password']}\n")
 
-            time.sleep(1)
+            time.sleep(1.5)
             redispatch(net_connect, device_type = node['device_type'])
 
             send_show_command(commands)
