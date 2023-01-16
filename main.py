@@ -87,6 +87,6 @@ def node_connection(ip_list):
 
 node_connection(ip_list)
 
-# Ending jumpserver SSH session
+# Ending jump server SSH session
 net_connect.write_channel('exit\n')
 log_file.close
