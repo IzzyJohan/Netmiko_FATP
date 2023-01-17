@@ -75,7 +75,7 @@ def node_connection(ip_list):
         print(ssh_output)
         log_file.write(ssh_output)
         net_connect.write_channel(f"ssh {node['ssh_user']}@{ip}\n")
-        time.sleep(2)
+        time.sleep(3)
         pass_output = net_connect.read_channel()
         print(pass_output)
 
@@ -85,14 +85,7 @@ def node_connection(ip_list):
             node_redispatch()
 
         elif 'password' in pass_output.lower():
-            net_connect.write_channel(f"{node['password']}\n")
-            time.sleep(1)
-            net_connect.write_channel(f"{node['another_password']}\n")
-
-            time.sleep(1)
-            redispatch(net_connect, device_type = node['device_type'])
-
-            send_show_command(commands)
+            node_redispatch()
 
         else: 
             no_respond = f'{ip} is not responding\n\n'
