@@ -19,9 +19,9 @@ guesser = SSHDetect(**jumpserver)
 best_match = guesser.autodetect()
 
 # Uncomment to show jump server detected device type
-# print(f'Device type: {best_match}') 
+print(f'Device type: {best_match}') 
 # Netmiko dictionary of the device type matching result
-# print(guesser.potential_matches) 
+print(guesser.potential_matches) 
 
 jumpserver['device_type'] = best_match
 net_connect = ConnectHandler(**jumpserver)
@@ -34,16 +34,31 @@ def get_ip_list():
     with open('ip_list.txt', 'r') as read_file:
         ip_list = read_file.read().splitlines()
     stripped_ip_list = [ip.strip() for ip in ip_list]
+    while('' in stripped_ip_list):
+        stripped_ip_list.remove('')
     return(stripped_ip_list)
 
 def get_commands_list():
     with open('commands.txt', 'r') as read_file:
         command_list = read_file.read().splitlines()
     stripped_command_list = [command.strip() for command in command_list]
+    while('' in stripped_command_list):
+        stripped_command_list.remove('')
     return(stripped_command_list)
 
 commands = get_commands_list()
 ip_list = get_ip_list()
+
+def node_redispatch():
+    net_connect.write_channel(f"{node['password']}\n")
+    time.sleep(2)
+    net_connect.write_channel(f"{node['another_password']}\n")
+    time.sleep(2)
+
+    redispatch(net_connect, device_type = node['device_type'])
+    send_show_command(commands)
+
+    net_connect.write_channel('exit\n')
 
 def send_show_command(commands):
     for command in commands:
@@ -60,24 +75,18 @@ def node_connection(ip_list):
         print(ssh_output)
         log_file.write(ssh_output)
         net_connect.write_channel(f"ssh {node['ssh_user']}@{ip}\n")
-        time.sleep(2)
+        time.sleep(3)
         pass_output = net_connect.read_channel()
+        print(pass_output)
 
-        if 'rsa' in pass_output.lower():
+        if 'fingerprint' in pass_output.lower():
             net_connect.write_channel('yes\n')
+            time.sleep(2)
+            node_redispatch()
 
         elif 'password' in pass_output.lower():
-            net_connect.write_channel(f"{node['password']}\n")
-            time.sleep(1)
-            net_connect.write_channel(f"{node['another_password']}\n")
+            node_redispatch()
 
-            time.sleep(1)
-            redispatch(net_connect, device_type = node['device_type'])
-
-            send_show_command(commands)
-
-            net_connect.write_channel('exit\n')
-            time.sleep(1)
         else: 
             no_respond = f'{ip} is not responding\n\n'
             print(no_respond)
@@ -87,6 +96,6 @@ def node_connection(ip_list):
 
 node_connection(ip_list)
 
-# Ending jumpserver SSH session
+# Ending jump server SSH session
 net_connect.write_channel('exit\n')
 log_file.close

@@ -1,3 +1,4 @@
-show run banner
-show ospf neighbor
-show alarms brief system active
+sh ospf nei
+sh alarms brief system active
+
+
