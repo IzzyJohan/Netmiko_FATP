@@ -1,4 +1,3 @@
-sh ospf nei
-sh alarms brief system active
-
-
+show ospf neighbor | in count
+show alarms brief system active
+sh int des | i up
