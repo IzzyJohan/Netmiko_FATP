@@ -1,32 +1,43 @@
 import time
 from netmiko import ConnectHandler, SSHDetect, redispatch
 import json
-# import logging
+import logging
 
-with open('config.json', 'r') as read_file:
-    config_data = json.load(read_file)
+def config_data():
+    with open('config.json', 'r') as read_file:
+        config_data = json.load(read_file)
+        global jumpserver, node
+        jumpserver = config_data['jumpserver']
+        node = config_data['node']
 
-jumpserver = config_data['jumpserver']
-node = config_data['node']
+def jumpserver_connection():
+    guesser = SSHDetect(**jumpserver)
+    best_match = guesser.autodetect() # Automatic device type detector
+    # print(guesser.potential_matches) # Netmiko dictionary of device match
+    jumpserver['device_type'] = best_match
 
-guesser = SSHDetect(**jumpserver)
-best_match = guesser.autodetect()
+    global net_connect
+    net_connect = ConnectHandler(**jumpserver)
+    print(f'Jump Server Prompt: {net_connect.find_prompt()}\n')
 
-# Uncomment to show jump server detected device type
-# print(f'Device type: {best_match}') 
-# Netmiko dictionary of the device type matching result
-# print(guesser.potential_matches) 
+    log_file()
+    node_connection(get_ip_list())
 
-jumpserver['device_type'] = best_match
-net_connect = ConnectHandler(**jumpserver)
-print(f'Jump Server Prompt: {net_connect.find_prompt()}\n')
+    net_connect.write_channel('exit\n')
+    log_file.close
 
-file_name = input('Masukan nama file: ')
-log_file = open(f'{file_name}.log', 'w')
+def log_file():
+    file_name = input('Masukan nama file: ')
+    print()
+    global log_file
+    log_file = open(f'{file_name}.log', 'w')
 
-# Netmiko debugging
-# logging.basicConfig(filename = 'debug.log', level = logging.DEBUG)
-# logger = logging.getLogger('netmiko')
+def debugging_log():
+    logging.basicConfig(filename='debug.log', level=logging.DEBUG)
+
+def separator():
+        separator = '=-' * 42
+        return separator
 
 def get_ip_list():
     with open('ip_list.txt', 'r') as read_file:
@@ -50,7 +61,7 @@ def active_node_handler():
     net_connect.write_channel(f"{node['another_password']}\n")
     time.sleep(2)
 
-    redispatch(net_connect, device_type = node['device_type'])
+    redispatch(net_connect, device_type=node['device_type'])
     send_show_command(get_commands_list())
 
     net_connect.write_channel('exit\n')
@@ -59,18 +70,18 @@ def active_node_handler():
 
 def send_show_command(commands):
     for command in commands:
-        output = f'{net_connect.send_command(command)}\n\n'
+        output = f'{net_connect.send_command(command)}'
         node_prompt = f'{net_connect.find_prompt()}{command}'
         time.sleep(1)
-        print(f'{node_prompt}\n{output}')
-        log_file.write(f'{node_prompt}\n{output}')
+        print(f'{node_prompt}\n{output}\n')
+        log_file.write(f'{node_prompt}\n{output}' + '\n\n')
 
 def node_connection(ip_list):
     for ip in ip_list:
 
-        write_ssh = f"{net_connect.find_prompt()}ssh {node['ssh_user']}@{ip}\n"
-        print(write_ssh)
-        log_file.write(write_ssh)
+        prompt_view = f"{net_connect.find_prompt()}ssh {node['ssh_user']}@{ip}"
+        print(prompt_view)
+        log_file.write(prompt_view + '\n')
 
         ssh_command = f"ssh {node['ssh_user']}@{ip}\n"
         net_connect.write_channel(ssh_command)
@@ -87,20 +98,26 @@ def node_connection(ip_list):
             active_node_handler()
         
         elif node_respond == ssh_command:
-            no_respond = f'{ip} is not responding\n\n'
-            print(no_respond)
-            log_file.write(no_respond)
+            no_respond = f'{ip} is not responding'
+            print(f'{no_respond}\n')
+            log_file.write(no_respond + '\n\n')
             net_connect.write_channel('\3')
             time.sleep(2)
 
         else:
-            print(node_respond + '\n\n')
+            print(f'{node_respond}\n')
             log_file.write(node_respond + '\n\n')
             net_connect.write_channel('\3')
             time.sleep(2)
-        
-node_connection(get_ip_list())
 
-# Ending jump server SSH session
-net_connect.write_channel('exit\n')
-log_file.close
+        print(separator())
+        log_file.write(separator() + '\n')
+
+def main():
+    config_data()
+    jumpserver_connection()
+
+
+if __name__ == '__main__':
+    main()
+
