@@ -13,7 +13,7 @@ def config_data():
 def jumpserver_connection():
     guesser = SSHDetect(**jumpserver)
     best_match = guesser.autodetect() # Automatic device type detector
-    # print(guesser.potential_matches) # Netmiko dictionary of device match
+    # print(guesser.potential_matches) # Netmiko dictionary of device match 
     jumpserver['device_type'] = best_match
 
     global net_connect
