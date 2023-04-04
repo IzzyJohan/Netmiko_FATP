@@ -1,3 +1,1 @@
-show ospf neighbor | in count
-show alarms brief system active
-show int desc | i up
+show version | i uptime
