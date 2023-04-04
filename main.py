@@ -23,8 +23,6 @@ def jumpserver_connection():
     net_connect = ConnectHandler(**jumpserver)
     print(f'Jump Server Prompt: {net_connect.find_prompt()}\n')
 
-    debugging_log()
-
     log_file()
     node_connection(get_ip_list())
 
